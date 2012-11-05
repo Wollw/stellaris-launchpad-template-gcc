@@ -1,3 +1,16 @@
 A simple template project for the Stellaris LaunchPad using GCC and lm4flash.
-The files LM4F.ld and LM4F_startup.c are from Mauro Scomparin's similar
-template here: https://github.com/scompo/stellaris-launchpad-template-gcc
+
+I created the Makefile by examining the Makefile found in this project:
+https://github.com/scompo/stellaris-launchpad-template-gcc
+
+and the options used in the tutorial here:
+http://recursive-labs.com/blog/2012/10/28/stellaris-launchpad-gnu-linux-getting-started/
+
+The Makefile requires you have the SW-EK-LM4F120XL StellarisWare software
+uncompressed somewhere as it expects to find two source files from it. The
+STELLARISWARE variable in the Makefile should be changed to wherever you've
+uncompressed that archive.  Also, you will need write access to wherever those
+files are as it compiles them in place.
+
+The StellarisWare software can be obtained here:
+ http://www.ti.com/tool/sw-ek-lm4f120xl
