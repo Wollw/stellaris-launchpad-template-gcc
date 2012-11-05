@@ -1,121 +1,66 @@
-# Copyright (c) 2012, Mauro Scomparin
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Mauro Scomparin nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY Mauro Scomparin ``AS IS'' AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Mauro Scomparin BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# File:			Makefile.
-# Author:		Mauro Scomparin <http://scompoprojects.worpress.com>.
-# Version:		1.0.0.
-# Description:	Sample makefile.
+TARGET = target
+SRC = $(wildcard src/*.c)
 
-#==============================================================================
-#           Cross compiling toolchain / tools specifications
-#==============================================================================
+#### Setup ####
+TOOLCHAIN  = arm-eabi
+PART       = LM4F120H5QR
+CPU        = cortex-m4
+FPU        = fpv4-sp-d16
+FABI       = softfp
 
-# Prefix for the arm-eabi-none toolchain.
-# I'm using codesourcery g++ lite compilers available here:
-# http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench/editions/lite-edition/
-PREFIX_ARM = arm-none-eabi
+LINKER_FILE = lib/LM4F.ld
+SRC        += lib/LM4F_startup.c
 
-# Microcontroller properties.
-PART=LM4F120H5QR
-CPU=-mcpu=cortex-m4
-FPU=-mfpu=fpv4-sp-d16 -mfloat-abi=softfp
+CC = $(TOOLCHAIN)-gcc
+LD = $(TOOLCHAIN)-ld
+CP = $(TOOLCHAIN)-objcopy
+OD = $(TOOLCHAIN)-objdump
 
-# Program name definition for ARM GNU C compiler.
-CC      = ${PREFIX_ARM}-gcc
-# Program name definition for ARM GNU Linker.
-LD      = ${PREFIX_ARM}-ld
-# Program name definition for ARM GNU Object copy.
-CP      = ${PREFIX_ARM}-objcopy
-# Program name definition for ARM GNU Object dump.
-OD      = ${PREFIX_ARM}-objdump
+CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
+CFLAGS+= -O0 -ffunction-sections -fdata-sections
+CFLAGS+= -MD -std=c99 -Wall -pedantic
+CFLAGS+= -DPART_$(PART) -c
+CFLAGS+= -g
 
-# Option arguments for C compiler.
-CFLAGS=-mthumb ${CPU} ${FPU} -O0 -ffunction-sections -fdata-sections -MD -std=c99 -Wall -pedantic -DPART_${PART} -c -g
+LIB_GCC_PATH=$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
+LIBC_PATH=$(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
+LIBM_PATH=$(shell $(CC) $(CFLAGS) -print-file-name=libm.a)
+LFLAGS = --gc-sections
 
-# Flags for LD
-LFLAGS  = --gc-sections
-
-# Flags for objcopy
 CPFLAGS = -Obinary
 
-# flags for objectdump
 ODFLAGS = -S
 
-# I want to save the path to libgcc, libc.a and libm.a for linking.
-# I can get them from the gcc frontend, using some options.
-# See gcc documentation
-LIB_GCC_PATH=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
-LIBC_PATH=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
-LIBM_PATH=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
-
-# Uploader tool path.
-# Set a relative or absolute path to the upload tool program.
-FLASHER=../../../../lm4tools/lm4flash/lm4flash
+FLASHER=lm4flash
 FLASHER_FLAGS=-v
 
-#==============================================================================
-#                         Project properties
-#==============================================================================
+OBJS = $(SRC:.c=.o)
 
-# Project name (W/O .c extension eg. "main")
-PROJECT_NAME = main
-# Startup file name (W/O .c extension eg. "LM4F_startup")
-STARTUP_FILE = LM4F_startup
-# Linker file name
-LINKER_FILE = LM4F.ld
+#### Rules ####
+all: $(OBJS) $(TARGET).axf $(TARGET)
 
-#==============================================================================
-#                      Rules to make the target
-#==============================================================================
+%.o: %.c
+	@echo
+	@echo Compiling $<...
+	$(CC) -c $(CFLAGS) $< -o $@
 
-#make all rule
-all: ${PROJECT_NAME}
+$(TARGET).axf: $(OBJS)
+	@echo
+	@echo Linking...
+	$(LD) $(LFLAGS) -o bin/$(TARGET).axf -T $(LINKER_FILE) $(OBJS) $(LIBM_PATH) $(LIBC_PATH) $(LIB_GCC_PATH) --entry=rst_handler
 
-${PROJECT_NAME}: ${PROJECT_NAME}.axf
-	@ echo "Copy ..."
-	$(CP) $(CPFLAGS) ${PROJECT_NAME}.axf ${PROJECT_NAME}.bin
-	$(OD) $(ODFLAGS) ${PROJECT_NAME}.axf > ${PROJECT_NAME}.lst
+$(TARGET): $(TARGET).axf
+	@echo
+	@echo Copying...
+	$(CP) $(CPFLAGS) bin/$(TARGET).axf bin/$(TARGET).bin
+	$(OD) $(ODFLAGS) bin/$(TARGET).axf > bin/$(TARGET).lst
 
-${PROJECT_NAME}.axf: ${PROJECT_NAME}.o ${STARTUP_FILE}.o
-	@ echo "Link ..."
-	#
-	${LD} ${LFLAGS} -o ${PROJECT_NAME}.axf -T ${LINKER_FILE} ${PROJECT_NAME}.o ${STARTUP_FILE}.o ${LIBM_PATH} ${LIBC_PATH}  ${LIB_GCC_PATH} --entry=rst_handler
+install: $(TARGET)
+	@echo
+	@echo Flashing...
+	$(FLASHER) bin/$(TARGET).bin $(FLASHER_FLAGS)
 
-${PROJECT_NAME}.o: ${PROJECT_NAME}.c
-	@ echo "Compile main..."
-	$(CC) $(CFLAGS) ${PROJECT_NAME}.c -o ${PROJECT_NAME}.o
-
-${STARTUP_FILE}.o: ${STARTUP_FILE}.c
-	@ echo "Compile startup ..."
-	$(CC) $(CFLAGS) ${STARTUP_FILE}.c -o ${STARTUP_FILE}.o
-
-# make clean rule
 clean:
-	rm *.bin *.o *.d *.axf *.lst
-
-# Rule to load the project to the board
-# I added a sudo because it's needed without a rule.
-load:
-	sudo ${FLASHER} ${PROJECT_NAME}.bin ${FLASHER_FLAGS}
+	@echo
+	@echo Cleaning...
+	rm lib/*.o lib/*.d src/*.o src/*.d bin/*

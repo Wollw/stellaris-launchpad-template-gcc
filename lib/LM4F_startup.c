@@ -251,12 +251,12 @@ void rst_handler(void){
 	unsigned long *dest = &_start_data;
 	
 	// until the destination it's full.
-	while(dest < _end_data){
+	while(dest < (unsigned long *)_end_data){
 		// assign the data to the destination and increment it afterwards
 		*dest++ = *src++;
 	}
 	// Now set the data referenced by .bss segment to 0.
-	for(dest = _start_bss; dest < _end_bss; dest++){
+	for(dest = (unsigned long *)_start_bss; dest < (unsigned long *)_end_bss; dest++){
 		*dest = 0;
 	}
 	

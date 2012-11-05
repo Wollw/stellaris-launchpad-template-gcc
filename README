@@ -1,0 +1,3 @@
+A simple template project for the Stellaris LaunchPad using GCC and lm4flash.
+The files LM4F.ld and LM4F_startup.c are from Mauro Scomparin's similar
+template here: https://github.com/scompo/stellaris-launchpad-template-gcc
