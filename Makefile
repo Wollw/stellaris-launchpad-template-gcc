@@ -19,7 +19,7 @@ OD = $(TOOLCHAIN)-objdump
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 CFLAGS+= -O0 -ffunction-sections -fdata-sections
 CFLAGS+= -MD -std=c99 -Wall -pedantic
-CFLAGS+= -DPART_$(PART) -c
+CFLAGS+= -DPART_$(PART) -c -DTARGET_IS_BLIZZARD_RA1
 CFLAGS+= -g
 
 LIB_GCC_PATH=$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
