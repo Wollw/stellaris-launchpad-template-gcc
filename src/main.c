@@ -1,7 +1,7 @@
 #include "util.h"
 
 int main(void) {
-    int i=f()-1;
+    int i=f();
 
     for(;;) {
         i++;
