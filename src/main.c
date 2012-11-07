@@ -16,14 +16,23 @@
 #define LED_GREEN GPIO_PIN_3
 
 int main() {
-    ROM_SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+    /* Set clock to 80MHz */
+    ROM_SysCtlClockSet(
+            SYSCTL_SYSDIV_2_5
+           |SYSCTL_USE_PLL
+           |SYSCTL_XTAL_16MHZ
+           |SYSCTL_OSC_MAIN
+    );
+
+    /* Enabled LED pins as outputs */
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     ROM_GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, LED_RED|LED_BLUE|LED_GREEN);
+
     for (;;) {
-        // set the red LED pin high, others low
+        // Alternate the blue and red LEDs
+        ROM_GPIOPinWrite(GPIO_PORTF_BASE, LED_RED|LED_GREEN|LED_BLUE, LED_BLUE);
+        ROM_SysCtlDelay(10000000);
         ROM_GPIOPinWrite(GPIO_PORTF_BASE, LED_RED|LED_GREEN|LED_BLUE, LED_RED);
-        ROM_SysCtlDelay(5000000);
-        ROM_GPIOPinWrite(GPIO_PORTF_BASE, LED_RED|LED_GREEN|LED_BLUE, 0);
-        ROM_SysCtlDelay(5000000);
+        ROM_SysCtlDelay(10000000);
     }
 }
