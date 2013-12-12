@@ -1,9 +1,9 @@
 TARGET = blink
 
 #### Setup ####
-STELLARISWARE = ~/.local/opt/StellarisWare
+STELLARISWARE = ~/.local/opt/stellarisware
 SRC           = $(wildcard src/*.c)
-TOOLCHAIN     = arm-eabi
+TOOLCHAIN     = arm-none-eabi
 PART          = LM4F120H5QR
 CPU           = cortex-m4
 FPU           = fpv4-sp-d16
